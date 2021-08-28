@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Control.Monad.Errors
+      Control.Monad.Errors.Class
   other-modules:
       Paths_monad_errors
   hs-source-dirs:
@@ -81,4 +82,39 @@ test-suite monad-errors-test
   build-depends:
       base >=4.7 && <5
     , monad-errors
+    , mtl
+    , transformers 
+    , QuickCheck
+    , timeit
   default-language: Haskell2010
+  default-extensions: 
+      DataKinds
+    , StandaloneKindSignatures
+    , ScopedTypeVariables
+    , TypeApplications
+    , PolyKinds
+    , GADTs
+    , RankNTypes
+    , FlexibleContexts
+    , FlexibleInstances
+    , FunctionalDependencies
+    , TypeFamilies
+    , OverloadedStrings
+    , MultiParamTypeClasses
+    , UndecidableSuperClasses
+    , UndecidableInstances
+    , AllowAmbiguousTypes
+    , BangPatterns 
+    , LambdaCase 
+    , MultiWayIf 
+    , StandaloneDeriving 
+    , NoMonomorphismRestriction 
+    , TypeSynonymInstances 
+    , TypeOperators 
+    , TemplateHaskell
+    , InstanceSigs 
+    , EmptyCase 
+    , NoCUSKs 
+    , NoStarIsType 
+    , DefaultSignatures
+    , OverloadedLabels 
