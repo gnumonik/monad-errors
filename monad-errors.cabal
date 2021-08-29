@@ -37,7 +37,9 @@ library
       base >=4.7 && <5
     , mtl 
     , transformers 
-
+    , kan-extensions
+    , constraints
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
   default-language: Haskell2010
   default-extensions: 
       DataKinds
@@ -78,7 +80,7 @@ test-suite monad-errors-test
       Paths_monad_errors
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:
       base >=4.7 && <5
     , monad-errors
@@ -86,6 +88,8 @@ test-suite monad-errors-test
     , transformers 
     , QuickCheck
     , timeit
+    , kan-extensions
+    , constraints 
   default-language: Haskell2010
   default-extensions: 
       DataKinds
