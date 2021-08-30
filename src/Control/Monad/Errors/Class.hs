@@ -43,8 +43,8 @@ class (MonadTrans t, forall m. Monad m => Monad (t m)) => MonadErrors e t | t ->
 
   liftE   :: forall m x. Monad m => Either e x -> (t m) x  
   liftE = \case 
-    Left err -> compE . pure $ failK err
-    Right a  -> pure a 
+    Left !err -> compE . pure $! failK err
+    Right !a  -> pure a 
 
 type Return r f a = f a -> r 
 
@@ -64,13 +64,13 @@ toLift lk = lowerCodensity lk
 newtype ErrorsK e a = ErrorsK (LiftK (Constant e) a) deriving (Functor, Applicative, Monad) 
 
 runErrorsK :: Monoid e => ErrorsK e a -> Either e a 
-runErrorsK (ErrorsK f) = runErrors . toLift $ f  
+runErrorsK (ErrorsK !f) = runErrors . toLift $ f  
 
 failK :: e -> ErrorsK e a
-failK e = ErrorsK $ Codensity $ \_ -> failure e  
+failK e = ErrorsK $! Codensity $ \ !_ -> failure e  
 
 eitherToErrorsK :: Monoid e => Either e a -> ErrorsK e a 
 eitherToErrorsK = \case 
-  Left err -> failK err 
-  Right a  -> pure a 
+  Left !err -> failK err 
+  Right !a  -> pure a 
 
