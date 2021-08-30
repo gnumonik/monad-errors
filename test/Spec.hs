@@ -22,8 +22,8 @@ countEven !n = if odd n
 
 test1 :: Int -> IO () -- (Either [(Int, String)] [Int], Int)
 test1 n = do 
-  !a <- pure $! runIdentity $! runStateT (collect_ countEven [1..n]) 0
-  print . snd $! a 
+  a <- pure . runIdentity . runStateT (collect_ countEven [1..n]) $ 0
+  print . snd $ a 
  
 
 runTest1 :: IO ()
