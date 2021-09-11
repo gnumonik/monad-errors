@@ -19,14 +19,17 @@ import Control.Applicative.Lift
     ( failure, runErrors, Errors, Lift(Pure, Other), eitherToErrors ) 
 import Control.Monad.Identity
     ( void, Identity(runIdentity), IdentityT (runIdentityT), (<$!>) )
-import Data.Kind 
-import Control.Monad.Trans.State.Strict 
-import Control.Monad.Codensity 
-import Control.Monad.Errors.Class 
-import Data.Functor.Const
-import Data.Functor.Constant
+import Control.Monad.Codensity
+    ( Codensity(Codensity), lowerCodensity ) 
+import Control.Monad.Errors.Class
+    ( type (:.:), MonadErrors(report, unliftE, runE, catchE, compE) )
+import Control.Monad.Errors.LiftK ( ErrorsK, runErrorsK, failK )
 import qualified Control.Foldl as F 
 import Data.Foldable (Foldable(toList, foldl'))
+import Control.Monad.State.Class ( MonadState(put, get) ) 
+import Control.Monad.IO.Class ( MonadIO(..) ) 
+import Control.Applicative ( Alternative(empty, (<|>)) )
+import Control.Monad ( MonadPlus, (<$!>) )
 
 newtype ErrorsT e m a = ErrorsT {unE :: Codensity (m :.: ErrorsK e) (ErrorsK e a)}
   deriving Functor
@@ -35,7 +38,7 @@ type CompE e m a = (m :.: Errors e) a
 
 type ErrorsI e a = ErrorsT e Identity a 
 
-instance (Monoid e ) => MonadTrans (ErrorsT e) where 
+instance MonadTrans (ErrorsT e) where 
   lift m = ErrorsT $ Codensity $ (go m)
     where 
       go :: forall m a. Monad m => m a -> forall b. (ErrorsK e a -> Compose m (ErrorsK e) b) -> Compose m (ErrorsK e) b
@@ -43,13 +46,13 @@ instance (Monoid e ) => MonadTrans (ErrorsT e) where
           m'' <- m'
           getCompose . f . pure $ m''
 
-instance (Monoid e, Monad m) => Applicative (ErrorsT e m) where 
+instance (Applicative m) => Applicative (ErrorsT e m) where 
   pure x = ErrorsT . pure . pure $! x 
 
   (ErrorsT f) <*> (ErrorsT  !x) 
-    = ErrorsT $ (fmap go f) <*> x 
+    = ErrorsT $ fmap go f <*> x 
    where 
-     go :: forall e a b. Monoid e => ErrorsK e (a -> b) -> ErrorsK e a -> ErrorsK e b
+     go :: forall e a b. ErrorsK e (a -> b) -> ErrorsK e a -> ErrorsK e b
      go g !h = g <*> h
   {-# INLINE (<*>) #-}
 
@@ -62,7 +65,7 @@ instance (Monoid e, Monad m) => Monad (ErrorsT  e m) where
   {-# INLINE (>>=) #-}
 
 
-instance (Monoid e, MonadTrans (ErrorsT e)) => MonadErrors e (ErrorsT e ) where 
+instance (Monoid e) => MonadErrors e (ErrorsT e ) where 
   runE (ErrorsT m) = (getCompose . lowerCodensity $ m) >>= \x -> case runErrorsK x of 
     Left e -> pure . Left $ e 
     Right e -> pure $ runErrorsK e 
@@ -73,16 +76,30 @@ instance (Monoid e, MonadTrans (ErrorsT e)) => MonadErrors e (ErrorsT e ) where
       go m f = Compose $  do 
         m' <- getCompose m 
         getCompose $ f m' 
+
+  catchE ey xy (ErrorsT m) = ErrorsT $! runErrorsK <$!> m >>= \case
+    Left err -> pure . pure $ ey err 
+    Right a  -> pure . pure $ xy a  
   {-# INLINE compE #-} 
 
-collecting :: forall h e t a m b.  (Foldable h, MonadErrors e t, Monad m, Monoid e) => (a -> t m b) -> h a -> m (Either e b)
-collecting f t = runE $ case (toList t) of 
-  [] -> report mempty 
-  (x:xs) -> foldl' (\acc i -> acc >> f i) (f x) xs 
+instance (MonadIO (t m), Monoid e) => MonadIO (ErrorsT e (t m)) where 
+  liftIO = unliftE . liftIO 
 
 
+instance (Monoid e, Monad m)=> Alternative (ErrorsT e m) where 
+  empty = report mempty 
 
-collect_ :: forall h e t m a b. (Traversable h, MonadErrors e t, Monad m, Monoid e) => (a -> t m b) -> h a ->  m ()
-collect_ f t =  void $ collecting f t 
+  (ErrorsT ma) <|> (ErrorsT mb) = ErrorsT $! runErrorsK <$!> ma >>= \case 
+    Left err ->  mb 
+    Right a  -> ma 
 
+instance (Monoid e, Monad m) => MonadPlus (ErrorsT e m)
+
+instance (Monoid e, Monad m) => MonadFail (ErrorsT e m) where 
+  fail _ = report mempty 
+
+instance (MonadState s m, Monoid e) => MonadState s (ErrorsT e m) where 
+  get = unliftE get 
+
+  put = unliftE . put  
 

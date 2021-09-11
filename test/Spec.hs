@@ -6,6 +6,7 @@ import Data.Functor.Identity
 import Control.Monad.Trans.Class 
 import System.TimeIt
 import Data.Monoid (Sum(..))
+import Control.Monad (replicateM)
 
 main :: IO ()
 main = runTest1
@@ -22,7 +23,7 @@ countEven !n = if odd n
 
 test1 :: Int -> IO () -- (Either [(Int, String)] [Int], Int)
 test1 n = do 
-  a <- pure . runIdentity . runStateT (collect_ countEven [1..n]) $ 0
+  a <- pure . runIdentity $ runStateT (runE $ traverse countEven $  [0..n]) 0
   print . snd $ a 
  
 

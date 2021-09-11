@@ -19,10 +19,8 @@ import Control.Applicative.Lift
     ( Lift, runErrors, failure, unLift )
 import Data.Functor.Constant ( Constant )
 
--- | LiftK f a = Codensity (Lift f) a 
 type LiftK f a = Codensity (Lift f) a 
 
--- | 
 unLiftK :: Applicative f => LiftK f a -> f a 
 unLiftK lk = unLift . lowerCodensity $ lk 
 
@@ -37,7 +35,7 @@ runErrorsK (ErrorsK !f) = runErrors . toLift $ f
 failK :: e -> ErrorsK e a
 failK e = ErrorsK $! Codensity $ \ !_ -> failure e  
 
-eitherToErrorsK :: Monoid e => Either e a -> ErrorsK e a 
+eitherToErrorsK :: forall e a. Monoid e => Either e a -> ErrorsK e a 
 eitherToErrorsK = \case 
   Left !err -> failK err 
   Right !a  -> pure a 
