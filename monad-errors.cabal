@@ -27,6 +27,7 @@ library
   exposed-modules:
       Control.Monad.Errors
       Control.Monad.Errors.Class
+      Control.Monad.Errors.LiftK
   other-modules:
       Paths_monad_errors
   hs-source-dirs:

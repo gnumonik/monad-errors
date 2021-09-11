@@ -21,7 +21,7 @@ It might be helpful to point out that that's just an optimized (hopefully!) vers
 newtype ErrorsT' e m a = ErrorsT' {unE :: m (Errors e a)}
 ``` 
 
-(I think, but am not 100% sure, that there's no way to define the relevant functor/applicative/monad instances unless you compose the relevant.)
+(I believe, but am not 100% sure, that there's no way to define the relevant functor/applicative/monad instances unless you compose the relevant functors.)
 
 And *that's*  more or less *this*, but with a different applicative instance for `Either` that allows for error collection: 
 
